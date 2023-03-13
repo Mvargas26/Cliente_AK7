@@ -3,10 +3,13 @@ using System.Diagnostics;
 using System.Timers;
 using System.IO;
 using Cliente_AK7.Models;
+using System.Net.Http.Headers;
 
 internal class Program
 {
     //Variables Globales 
+    static HttpClient client = new HttpClient();
+
     static System.Timers.Timer timer;
     public static UmbralCompServer registroCPU = new UmbralCompServer();
     public static UmbralCompServer registroMemoria = new UmbralCompServer();
@@ -15,33 +18,25 @@ internal class Program
 
     public Program()
     {
-        //Server.CodServidor = "S_W_1";
-        //Server.NombServidor = "PC_Michael";
-        //Server.DescServidor = "PC Michael Wimdows";
-        //Server.UserAdmiServidor = "admin";
-        //Server.PassServidor = "cABhAHMAcwA=";
+       
 
-        registroCPU.CodServer= "S_W_1";
+        
+
         registroMemoria.CodServer = "S_W_1";
-        registroDisco.CodServer = "S_W_1";
-
-        registroDisco.CodComp = "CO1";
-        registroCPU.CodComp = "CO2";
         registroMemoria.CodComp = "CO3";
+        registroMemoria.CodUmbral = "normal";
 
+        registroDisco.CodServer = "S_W_1";
+        registroDisco.CodComp = "CO1";
         registroDisco.CodUmbral = "normal";
-        registroCPU.CodComp = "normal";
-        registroMemoria.CodComp = "normal";
+       
 
     }
 
     private static void Main(string[] args)
     {
-        monitoreoCPU(5000);
-        monitoreoMemoria(5000);
-        monitoreoDisco(5000);
 
-       
+        RunAsync().GetAwaiter().GetResult();
 
 
 
@@ -49,7 +44,33 @@ internal class Program
         Console.ReadKey();
     }//fn main
 
-    
+    static async Task RunAsync()
+    {
+        client.BaseAddress = new Uri("http://localhost:5021/");
+        client.DefaultRequestHeaders.Accept.Clear();
+        client.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+
+        UmbralCompServer c = new UmbralCompServer()
+        {
+            CodServer = "S_W_1",
+            CodComp = "CO2",
+            CodUmbral = "normal",
+            Porcentaje = usoCPUDevuelve()
+        };
+        c = await crearRegistro(c);
+        Console.WriteLine($"Registrado");
+        Console.ReadLine();
+    }//fn
+
+    static async Task<UmbralCompServer> crearRegistro(UmbralCompServer c)
+    {
+        HttpResponseMessage response = await client.PostAsJsonAsync("paramSensibilidad", c);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadAsAsync<UmbralCompServer>();
+    }
+
     #region CPU
     private static void usoCPU(object sender, ElapsedEventArgs e)
     {
@@ -67,6 +88,28 @@ internal class Program
             registroCPU.Porcentaje = (int)usoCPU / 10;
 
             Console.WriteLine($"Porcentaje CPU: {registroCPU.Porcentaje}%");
+        }
+        catch (Exception ex)
+        {
+
+            throw new Exception("Fallo obtener Param " + ex.Message);
+        }
+
+    }//fin
+    private static int usoCPUDevuelve()
+    {
+        try
+        {
+            float processCpuUsage = Process.GetCurrentProcess().TotalProcessorTime.Ticks / (float)Stopwatch.Frequency;
+
+            float usoCPU = 0;
+
+            foreach (var cpu in new PerformanceCounterCategory("Processor").GetCounters("_Total"))
+            {
+                usoCPU += cpu.NextValue();
+            }
+
+            return (int)usoCPU / 10;
         }
         catch (Exception ex)
         {
