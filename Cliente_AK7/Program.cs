@@ -16,16 +16,17 @@ class Program
         Console.ReadKey();
     }
 
-    static void MonitorRecursosSerividor()
+    static async void MonitorRecursosSerividor()
     {
         Process process = Process.GetCurrentProcess();
 
-        Thread h1 = new Thread(() =>
+        Thread h1 = new Thread(async () =>
         {
             while (true)
             {
+                int espacioC = 0;
                 float monitorCPU = process.TotalProcessorTime.Ticks / (float)Stopwatch.Frequency / Environment.ProcessorCount;
-                Console.WriteLine("CPU en uso: {0:F2}%", monitorCPU * 100);
+                Console.WriteLine("CPU en uso: "+monitorCPU * 100);
 
                 long monitorRAM = process.WorkingSet64;
                 Console.WriteLine("RAM en uso: {0:N0} MB", monitorRAM);
@@ -39,41 +40,46 @@ class Program
                         long espacioLibre = disco.TotalFreeSpace;
                         long espacioUsado = esapcioTotal - espacioLibre;
                         Console.WriteLine("{0} usado: {1:N0} bytes ({2:F2}%)", disco.Name, espacioUsado, (espacioUsado / (float)esapcioTotal) * 100);
+                        if (disco.Name == "C:")
+                        {
+                            espacioC = (int)espacioUsado;
+                        }
                     }
                 }
-                RunAsync().GetAwaiter().GetResult();
 
+                client.BaseAddress = new Uri("http://localhost:5021/");
+                client.DefaultRequestHeaders.Accept.Clear();
+                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                MonitoreoServidor MS = new MonitoreoServidor()
+                {
+                    IdMonitoreo = 0,
+                    IdServer = "S_W_1",
+                    UsoCpu = (int)monitorCPU,
+                    UsoMemoria = (int)monitorRAM,
+                    UsoEspacio = (int)espacioC,
+                    EstadoServer=1,
+                    FechaMonitoreo= DateTime.UtcNow,
+                    TimeOut=1
+                };
+
+                MS = await crearRegistro(MS);
+                Console.WriteLine($"Registrado");
+
+                //hilo duerme 10 seg
                 Thread.Sleep(10000);
             }
         });
 
-        // Start the system resource monitoring thread
         h1.Start();
     }
 
-    static async Task<UmbralCompServer> crearRegistro(UmbralCompServer c)
+    static async Task<MonitoreoServidor> crearRegistro(MonitoreoServidor c)
     {
         HttpResponseMessage response = await client.PostAsJsonAsync("paramSensibilidad", c);
         response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadAsAsync<UmbralCompServer>();
+        return await response.Content.ReadAsAsync<MonitoreoServidor>();
     }
-    static async Task RunAsync()
-    {
-        client.BaseAddress = new Uri("http://localhost:5021/");
-        client.DefaultRequestHeaders.Accept.Clear();
-        client.DefaultRequestHeaders.Accept.Add(
-            new MediaTypeWithQualityHeaderValue("application/json"));
-
-        UmbralCompServer c = new UmbralCompServer()
-        {
-            CodServer = "S_W_1",
-            CodComp = "CO2",
-            CodUmbral = "normal",
-            Porcentaje = usoCPUDevuelve()
-        };
-        c = await crearRegistro(c);
-        Console.WriteLine($"Registrado");
-        Console.ReadLine();
-    }//fn
-}
+    
+}//fn class
