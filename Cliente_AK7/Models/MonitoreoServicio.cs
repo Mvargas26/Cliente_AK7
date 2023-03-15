@@ -17,5 +17,7 @@ namespace Cliente_AK7.Models
         public DateTime FechaMoniServicio { get; set; }
 
         public int TimeOutServicio { get; set; }
+        public string estadoParam { get; set; } = null!;
+
     }//fin class
 }

@@ -23,6 +23,8 @@ namespace Cliente_AK7.Models
         public DateTime FechaMonitoreo { get; set; }
 
         public int TimeOut { get; set; }
+        public string estadoParam { get; set; } = null!;
+
 
     }//fin class
 }
