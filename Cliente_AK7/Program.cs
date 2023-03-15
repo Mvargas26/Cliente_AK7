@@ -23,10 +23,14 @@ class Program
             Console.WriteLine("Esta en Sistema Wimdows");
             MonitorRecursosSerividorWin();
             MonitorServicioWin();
-        }     
-        
+        }  else
+        {
+            Console.WriteLine("Esta en Sistema Linux");
 
-        
+        }
+
+
+
 
         Console.ReadKey();
     }
