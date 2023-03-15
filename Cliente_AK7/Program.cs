@@ -21,8 +21,8 @@ class Program
         if (systemWimdos())
         {
             Console.WriteLine("Esta en Sistema Wimdows");
-            MonitorRecursosSerividor();
-            MonitorServicio();
+            MonitorRecursosSerividorWin();
+            MonitorServicioWin();
         }     
         
 
@@ -30,8 +30,9 @@ class Program
 
         Console.ReadKey();
     }
-
-    static async void MonitorRecursosSerividor()
+    #region Windows
+   
+    static async void MonitorRecursosSerividorWin()
     {
         Process process = Process.GetCurrentProcess();
 
@@ -92,7 +93,7 @@ class Program
            Console.WriteLine("Error monitoreo Recursos W");
         }
     }
-    static async void MonitorServicio()
+    static async void MonitorServicioWin()
     {
         Process process = Process.GetCurrentProcess();
 
@@ -211,5 +212,9 @@ class Program
         }
     }
 
-    
+    #endregion
+
+
+
+
 }//fn class
