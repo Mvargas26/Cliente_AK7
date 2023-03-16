@@ -28,7 +28,8 @@ class Program
         }  else
         {
             Console.WriteLine("Esta en Sistema Linux");
-
+            Thread usageThread = new Thread(MonitorRecursosSerividor_Linux);
+            usageThread.Start();
         }
 
 
@@ -220,7 +221,71 @@ class Program
 
     #endregion
 
+    #region Linux
 
+    static void MonitorRecursosSerividor_Linux()
+    {
+        while (true)
+        {
+            float cpuUsage = usoCPULinux();
+            Console.WriteLine("uso CPU : " + cpuUsage + "%");
+
+            float ramUsage = usoRAMlinux();
+            Console.WriteLine("uso RAM : " + ramUsage + "%");
+
+            float diskUsage = usoDISCOlinux();
+            Console.WriteLine("uso Disk : " + diskUsage + "%");
+
+            Thread.Sleep(10000);
+        }
+    }
+
+    static float usoCPULinux()
+    {
+        ProcessStartInfo psi = new ProcessStartInfo("bash", "-c \"top -b -n1 | grep 'Cpu(s)'\"");
+        psi.RedirectStandardOutput = true;
+        Process proc = Process.Start(psi);
+        string output = proc.StandardOutput.ReadToEnd();
+        proc.WaitForExit();
+
+        float usoCPU = float.Parse(output.Split(new char[] { ' ', '%' }, StringSplitOptions.RemoveEmptyEntries)[1]);
+
+        return usoCPU;
+    }
+
+    static float usoRAMlinux()
+    {
+        ProcessStartInfo psi = new ProcessStartInfo("bash", "-c \"free | grep Mem\"");
+        psi.RedirectStandardOutput = true;
+        Process proc = Process.Start(psi);
+        string output = proc.StandardOutput.ReadToEnd();
+        proc.WaitForExit();
+
+        string[] values = output.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        float total = float.Parse(values[1]);
+        float used = float.Parse(values[2]);
+        float usoRAM = used / total * 100;
+
+        return usoRAM;
+    }
+
+    static float usoDISCOlinux()
+    {
+        ProcessStartInfo psi = new ProcessStartInfo("bash", "-c \"df -h /\"");
+        psi.RedirectStandardOutput = true;
+        Process proc = Process.Start(psi);
+        string output = proc.StandardOutput.ReadToEnd();
+        proc.WaitForExit();
+
+        // parse the disk usage from the output
+        string[] values = output.Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        float total = float.Parse(values[8].Replace("G", ""));
+        float used = float.Parse(values[9].Replace("G", ""));
+        float usoDISco = used / total * 100;
+
+        return usoDISco;
+    }
+    #endregion
 
 
 }//fn class
