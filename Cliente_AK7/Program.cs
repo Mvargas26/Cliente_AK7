@@ -52,7 +52,6 @@ class Program
                 {
                     MonitorRecursosSerividor_Linux();
                     MonitorServicioLin_Socket();
-
                     Thread.Sleep(180000);
                 }
             });
