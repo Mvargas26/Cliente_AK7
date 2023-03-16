@@ -85,7 +85,7 @@ class Program
                         estadoParam = "normal"
                     };
                     MS = await crearRegistroServidor(MS);
-                    Console.WriteLine($"Registrado");
+                    Console.WriteLine($"Registrado Server");
 
                     //hilo duerme 3 min
                     Thread.Sleep(180000);
@@ -144,20 +144,7 @@ class Program
         }
     }
 
-    static async Task<MonitoreoServidor> crearRegistroServidor(MonitoreoServidor c)
-    {
-        HttpResponseMessage response = await client.PostAsJsonAsync("Monitoreo", c);
-        response.EnsureSuccessStatusCode();
-
-        return await response.Content.ReadAsAsync<MonitoreoServidor>();
-    }
-    static async Task<MonitoreoServicio> crearRegistroServicio(MonitoreoServicio c) 
-    {
-        HttpResponseMessage response = await client.PostAsJsonAsync("monitoreoServicio", c);
-        response.EnsureSuccessStatusCode();
-
-        return await response.Content.ReadAsAsync<MonitoreoServicio>();
-    }
+    
 
    static private bool conexionBDNortwhind()
     {
@@ -223,19 +210,34 @@ class Program
 
     #region Linux
 
-    static void MonitorRecursosSerividor_Linux()
+    static async void MonitorRecursosSerividor_Linux()
     {
         while (true)
         {
-            float cpuUsage = usoCPULinux();
-            Console.WriteLine("uso CPU : " + cpuUsage + "%");
+            float CPUusado = usoCPULinux();
+            Console.WriteLine("uso CPU : " + CPUusado + "%");
 
-            float ramUsage = usoRAMlinux();
-            Console.WriteLine("uso RAM : " + ramUsage + "%");
+            float RAMusada = usoRAMlinux();
+            Console.WriteLine("uso RAM : " + RAMusada + "%");
 
-            float diskUsage = usoDISCOlinux();
-            Console.WriteLine("uso Disk : " + diskUsage + "%");
+            float DISCOusado = usoDISCOlinux();
+            Console.WriteLine("uso Disk : " + DISCOusado + "%");
 
+            MonitoreoServidor MS = new MonitoreoServidor()
+            {
+                IdMonitoreo = 0,
+                IdServer = "S_L_1",
+                UsoCpu = Convert.ToInt32(CPUusado),
+                UsoMemoria = (int)RAMusada,
+                UsoEspacio = (int)DISCOusado,
+                EstadoServer = 1,
+                FechaMonitoreo = DateTime.Now,
+                TimeOut = 3,
+                estadoParam = "normal"
+            };
+
+            MS = await crearRegistroServidor(MS);
+            Console.WriteLine($"Registrado Server");
             Thread.Sleep(10000);
         }
     }
@@ -287,5 +289,20 @@ class Program
     }
     #endregion
 
+    #region Compartidos
+    static async Task<MonitoreoServidor> crearRegistroServidor(MonitoreoServidor c)
+    {
+        HttpResponseMessage response = await client.PostAsJsonAsync("Monitoreo", c);
+        response.EnsureSuccessStatusCode();
 
+        return await response.Content.ReadAsAsync<MonitoreoServidor>();
+    }
+    static async Task<MonitoreoServicio> crearRegistroServicio(MonitoreoServicio c)
+    {
+        HttpResponseMessage response = await client.PostAsJsonAsync("monitoreoServicio", c);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadAsAsync<MonitoreoServicio>();
+    }
+    #endregion
 }//fn class
