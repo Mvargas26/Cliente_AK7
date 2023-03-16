@@ -163,6 +163,7 @@ class Program
                 estadoParam = "normal"
             };
             MS = await crearRegistroServidor(MS);
+
             Console.WriteLine($"Registrado Server \n");
         }
         catch (Exception ex )
