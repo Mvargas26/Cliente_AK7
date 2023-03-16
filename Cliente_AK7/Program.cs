@@ -7,12 +7,17 @@ using System.Data.SqlClient;
 using System.Runtime.ConstrainedExecution;
 using System.Security.Cryptography;
 using System.Text;
+using System.Net.Sockets;
+using System.Net;
 
 class Program
 {
+    //VARIABLES GLOBALES
     static HttpClient client = new HttpClient();
+    private static NetworkStream soc_stream;
+    private static BinaryWriter bw_Escritor;
+    private static BinaryReader br_Lector;
 
-   
     static void Main()
     {
         client.BaseAddress = new Uri("http://apiprogra.somee.com/");
@@ -30,7 +35,7 @@ class Program
                     MonitorRecursosSerividorWin();
                     MonitorServicioWin_BD1();
                     MonitorServicioWin_BD2();
-                    Thread.Sleep(180000);
+                    Thread.Sleep(10000);
                 }
             });
             h1.Start();
@@ -46,12 +51,17 @@ class Program
                 while (true)
                 {
                     MonitorRecursosSerividor_Linux();
+                    MonitorServicioLin_Socket();
+
                     Thread.Sleep(180000);
                 }
             });
             h1.Start();
         }
-    }
+    }//FN MAIN
+
+
+
     #region Windows
    
     static async void MonitorRecursosSerividorWin()
@@ -338,7 +348,91 @@ class Program
 
         return usoDISco;
     }
+
+    public static bool EjecutarClientesocket()
+    {
+        bool socketUP = false;
+
+        TcpClient tcp_Cliente;
+
+        try
+        {
+            tcp_Cliente = new TcpClient();
+            tcp_Cliente.Connect("127.0.0.1", 12345);
+
+            soc_stream = tcp_Cliente.GetStream();
+            bw_Escritor = new BinaryWriter(soc_stream);
+            br_Lector = new BinaryReader(soc_stream);
+
+            string mensaje_Servidor = null;
+            do
+            {
+                try
+                {
+
+                    mensaje_Servidor = br_Lector.ReadString();
+                    Console.WriteLine(mensaje_Servidor + "\n");
+
+                    if (mensaje_Servidor.Equals("Server_UP"))
+                    {
+                        socketUP = true;
+                        break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    registroBitacora(ex.Message);
+                    Console.WriteLine("Fin conexion Socket");
+                }
+
+            } while (mensaje_Servidor != "Server >>> Salir");
+            Console.WriteLine("El Servidor Termino la conexion");
+            bw_Escritor.Close();
+            br_Lector.Close();
+            tcp_Cliente.Close();
+            soc_stream.Close();
+
+            return socketUP;
+        }
+        catch (Exception ex)
+        {
+            registroBitacora(ex.Message);
+            Console.WriteLine("Fin conexion Socket...");
+            return socketUP;
+        }
+    }//fin metodo ejecutar cliente
+    static async void MonitorServicioLin_Socket()
+    {
+        try
+        {
+            MonitoreoServicio ms = new MonitoreoServicio()
+            {
+                IdMonitoreo = 0,
+                IdServicio = "SVCL1",
+                EstadoServicio = 0,
+                FechaMoniServicio = DateTime.Now,
+                TimeOutServicio = 3,
+                estadoParam = "alert"
+
+            };
+
+            if (EjecutarClientesocket())
+            {
+                ms.EstadoServicio = 1;
+                ms.estadoParam = "normal";
+            };
+
+            ms = await crearRegistroServicio(ms);
+            Console.WriteLine($"Servicio 1 Linux Registrado");
+        }
+        catch (Exception ex)
+        {
+            registroBitacora(ex.Message);
+            Console.WriteLine("Error en Monitoreo Servicios....: Socket ");
+        }
+    }
     #endregion
+
 
     #region Compartidos
     static async Task<MonitoreoServidor> crearRegistroServidor(MonitoreoServidor c)
@@ -355,7 +449,6 @@ class Program
 
         return await response.Content.ReadAsAsync<MonitoreoServicio>();
     }
-
     static void registroBitacora(string ErrorGuardar)
     {
         try
