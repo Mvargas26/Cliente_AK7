@@ -237,7 +237,7 @@ class Program
 
             await crearRegistroServidorLinux(MS);
             Console.WriteLine($"Registrado Server");
-            Thread.Sleep(10000);
+            Thread.Sleep(180000);
         }
     }
 
