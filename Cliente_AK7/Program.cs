@@ -29,7 +29,6 @@ class Program
                 {
                     MonitorRecursosSerividorWin();
                     MonitorServicioWin();
-                    registroBitacora("Prueba Wimdows");
                     Thread.Sleep(180000);
                 }
             });
@@ -46,8 +45,6 @@ class Program
                 while (true)
                 {
                     MonitorRecursosSerividor_Linux();
-                    registroBitacora("Prueba Wimdows");
-
                     Thread.Sleep(180000);
                 }
             });
@@ -317,7 +314,7 @@ class Program
             }
             else
             {
-                 urlEscritorio = Environment.GetEnvironmentVariable("XDG_DESKTOP_DIR");
+               urlEscritorio = Directory.GetCurrentDirectory();
             }
 
             string archivo = Path.Combine(urlEscritorio, "BitacoraInterna_Cliente_PrograV.txt");
