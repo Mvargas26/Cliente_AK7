@@ -23,6 +23,8 @@ class Program
             Console.WriteLine("Esta en Sistema Wimdows");
             MonitorRecursosSerividorWin();
             MonitorServicioWin();
+
+            Console.ReadKey();
         }  else
         {
             Console.WriteLine("Esta en Sistema Linux");
@@ -32,7 +34,7 @@ class Program
 
 
 
-        Console.ReadKey();
+        
     }
     #region Windows
    
