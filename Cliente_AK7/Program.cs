@@ -211,34 +211,51 @@ class Program
 
     static async void MonitorRecursosSerividor_Linux()
     {
-        while (true)
+        Process process = Process.GetCurrentProcess();
+
+        try
         {
-            float CPUusado = usoCPULinux();
-            Console.WriteLine("uso CPU : " + CPUusado + "%");
-
-            float RAMusada = usoRAMlinux();
-            Console.WriteLine("uso RAM : " + RAMusada + "%");
-
-            float DISCOusado = usoDISCOlinux();
-            Console.WriteLine("uso Disk : " + DISCOusado + "%");
-
-            MonitoreoServidor MS = new MonitoreoServidor()
+            Thread h1 = new Thread(async () =>
             {
-                IdMonitoreo = 0,
-                IdServer = "S_L_1",
-                UsoCpu = Convert.ToInt32(CPUusado),
-                UsoMemoria = (int)RAMusada,
-                UsoEspacio = (int)DISCOusado,
-                EstadoServer = 1,
-                FechaMonitoreo = DateTime.Now,
-                TimeOut = 3,
-                estadoParam = "normal"
-            };
+                while (true)
+                {
+                    float CPUusado = usoCPULinux();
+                    Console.WriteLine("uso CPU : " + CPUusado + "%");
 
-            await crearRegistroServidorLinux(MS);
-            Console.WriteLine($"Registrado Server");
-            Thread.Sleep(180000);
+                    float RAMusada = usoRAMlinux();
+                    Console.WriteLine("uso RAM : " + RAMusada + "%");
+
+                    float DISCOusado = usoDISCOlinux();
+                    Console.WriteLine("uso Disk : " + DISCOusado + "%");
+
+                    MonitoreoServidor MS = new MonitoreoServidor()
+                    {
+                        IdMonitoreo = 0,
+                        IdServer = "S_L_1",
+                        UsoCpu = Convert.ToInt32(CPUusado),
+                        UsoMemoria = (int)RAMusada,
+                        UsoEspacio = (int)DISCOusado,
+                        EstadoServer = 1,
+                        FechaMonitoreo = DateTime.Now,
+                        TimeOut = 3,
+                        estadoParam = "normal"
+                    };
+
+                    await crearRegistroServidor(MS);
+                    Console.WriteLine($"Registrado Server");
+                    Thread.Sleep(180000);
+                }
+
+            });
+
+            h1.Start();
         }
+        catch (Exception ex)
+        {
+
+            Console.WriteLine("Error monitoreo Recursos L");
+        }
+
     }
 
     static float usoCPULinux()
