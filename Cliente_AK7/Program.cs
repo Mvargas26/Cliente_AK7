@@ -6,6 +6,7 @@ using System.Threading;
 using System.Data.SqlClient;
 using System.Runtime.ConstrainedExecution;
 using System.Security.Cryptography;
+using System.Text;
 
 class Program
 {
@@ -144,8 +145,6 @@ class Program
         }
     }
 
-    
-
    static private bool conexionBDNortwhind()
     {
         SqlConnection conexion = new SqlConnection("server=MVARGASPC\\INSTA12019 ; database=Northwind ; integrated security = true");
@@ -236,7 +235,7 @@ class Program
                 estadoParam = "normal"
             };
 
-            MS = await crearRegistroServidor(MS);
+            await crearRegistroServidorLinux(MS);
             Console.WriteLine($"Registrado Server");
             Thread.Sleep(10000);
         }
@@ -303,6 +302,25 @@ class Program
         response.EnsureSuccessStatusCode();
 
         return await response.Content.ReadAsAsync<MonitoreoServicio>();
+    }
+    static async Task crearRegistroServidorLinux(MonitoreoServidor c)
+    {
+        using (var httpClient = new HttpClient())
+        {
+            var requestUrl = "http://apiprogra.somee.com/Monitoreo";
+
+            var requestParams = c;
+
+            var requestJson = Newtonsoft.Json.JsonConvert.SerializeObject(requestParams);
+
+            var requestMessage = new HttpRequestMessage(HttpMethod.Post, requestUrl);
+            requestMessage.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
+
+            var response = await httpClient.SendAsync(requestMessage);
+
+            var responseJson = await response.Content.ReadAsStringAsync();
+            Console.WriteLine(responseJson);
+        }
     }
     #endregion
 }//fn class
