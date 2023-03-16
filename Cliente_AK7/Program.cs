@@ -35,6 +35,7 @@ class Program
                 while (true)
                 {
                     MonitorRecursosSerividor_Linux();
+                     Thread.Sleep(10000);
                 }
             });
             h1.Start();
