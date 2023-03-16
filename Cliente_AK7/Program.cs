@@ -17,45 +17,100 @@ class Program
     private static NetworkStream soc_stream;
     private static BinaryWriter bw_Escritor;
     private static BinaryReader br_Lector;
-
+    private static string codServidor="SERV1";
     static void Main()
     {
         client.BaseAddress = new Uri("http://apiprogra.somee.com/");
         client.DefaultRequestHeaders.Accept.Clear();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
+        //********** USER MENU*****************************
+        Console.Write("Selecione su Servidor\n");
+        Console.Write("*****************************\n");
+        Console.Write("1. Servidor 1 Windows\n");
+        Console.Write("2. Servidor 2 Windows\n");
+        Console.Write("3. Servidor 1 Linux\n");
+        Console.Write("4. Servidor 2 Linux\n");
+        Console.Write("*****************************\n");
+
+        int valor = int.Parse(Console.ReadLine());
+        switch (valor)
+        {
+            case 1:
+                codServidor = "S_W_1";
+                break;
+            case 2:
+                codServidor = "S_W_2";
+                break;
+            case 3:
+                codServidor = "S_L_1";
+                break;
+            case 4:
+                codServidor = "S_L_2";
+                break;
+            default:
+                Console.Write("Se ingreso un valor fuera de rango");
+                break;
+        }
+        //entra si es windows
         if (systemWimdos())
         {
-            Thread h1 = new Thread(async () =>
+            if (codServidor.Equals("S_W_1"))
             {
-                Console.WriteLine("Esta en Sistema Windows");
-
-                while (true)
+                Thread h1 = new Thread(async () =>
                 {
-                    MonitorRecursosSerividorWin();
-                    MonitorServicioWin_BD1();
-                    MonitorServicioWin_BD2();
-                    Thread.Sleep(10000);
-                }
-            });
-            h1.Start();
+                    Console.WriteLine("Esta en Sistema Windows \n");
+                    Console.WriteLine("En el Servidor " + codServidor);
+                    while (true)
+                    {
+                        MonitorRecursosSerividorWin();
+                        MonitorServicioWin_BD1();
+                        MonitorServicioWin_BD2();
+                        MonitorServicio_Socket();
+                        Thread.Sleep(10000);
+                    }
+                });
+                h1.Start();
+            }
+            else if(codServidor.Equals("S_W_2"))
+            {
+                Thread h1 = new Thread(async () =>
+                {
+                    Console.WriteLine("Esta en Sistema Windows \n");
+                    Console.WriteLine("En el Servidor " + codServidor);
+                    while (true)
+                    {
+                        MonitorRecursosSerividorWin();
+                        MonitorServicio_Socket();
+                        Thread.Sleep(10000);
+                    }
+                });
+                h1.Start();
 
+            }
             Console.ReadKey();
-        } 
-        else
+        }
+        else   //entra si es Linux
         {
-            Thread h1 = new Thread(async () =>
+            if (codServidor.Equals("S_L_1"))
             {
-                Console.WriteLine("Esta en Sistema Linux");
-
-                while (true)
+                Thread h1 = new Thread(async () =>
                 {
-                    MonitorRecursosSerividor_Linux();
-                    MonitorServicioLin_Socket();
-                    Thread.Sleep(180000);
-                }
-            });
-            h1.Start();
+                    Console.WriteLine("Esta en Sistema Linux \n");
+                    Console.WriteLine("En el Servidor " + codServidor);
+                    while (true)
+                    {
+                        MonitorRecursosSerividor_Linux();
+                        Thread.Sleep(180000);
+                    }
+                });
+                h1.Start();
+            }
+            else if (codServidor.Equals("S_L_2"))
+            {
+                Console.Write("Parte donde va el tomcat");
+            }
+            
         }
     }//FN MAIN
 
@@ -220,7 +275,36 @@ class Program
         }
         finally { conexion.Close(); }
     }
+    static async void MonitorServicio_Socket()
+    {
+        try
+        {
+            MonitoreoServicio ms = new MonitoreoServicio()
+            {
+                IdMonitoreo = 0,
+                IdServicio = "SVC3",
+                EstadoServicio = 0,
+                FechaMoniServicio = DateTime.Now,
+                TimeOutServicio = 3,
+                estadoParam = "alert"
 
+            };
+
+            if (EjecutarClientesocket())
+            {
+                ms.EstadoServicio = 1;
+                ms.estadoParam = "normal";
+            };
+
+            ms = await crearRegistroServicio(ms);
+            Console.WriteLine($"Servicio Socket Registrado");
+        }
+        catch (Exception ex)
+        {
+            registroBitacora(ex.Message);
+            Console.WriteLine("Error en Monitoreo Servicios....: Socket ");
+        }
+    }
     static private bool systemWimdos()
     {
          bool esWimdows = false;
@@ -400,36 +484,7 @@ class Program
             return socketUP;
         }
     }//fin metodo ejecutar cliente
-    static async void MonitorServicioLin_Socket()
-    {
-        try
-        {
-            MonitoreoServicio ms = new MonitoreoServicio()
-            {
-                IdMonitoreo = 0,
-                IdServicio = "SVCL1",
-                EstadoServicio = 0,
-                FechaMoniServicio = DateTime.Now,
-                TimeOutServicio = 3,
-                estadoParam = "alert"
-
-            };
-
-            if (EjecutarClientesocket())
-            {
-                ms.EstadoServicio = 1;
-                ms.estadoParam = "normal";
-            };
-
-            ms = await crearRegistroServicio(ms);
-            Console.WriteLine($"Servicio 1 Linux Registrado");
-        }
-        catch (Exception ex)
-        {
-            registroBitacora(ex.Message);
-            Console.WriteLine("Error en Monitoreo Servicios....: Socket ");
-        }
-    }
+   
     #endregion
 
 
