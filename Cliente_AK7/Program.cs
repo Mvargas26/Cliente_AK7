@@ -28,15 +28,17 @@ class Program
             Console.ReadKey();
         }  else
         {
-            Console.WriteLine("Esta en Sistema Linux");
-            Thread usageThread = new Thread(MonitorRecursosSerividor_Linux);
-            usageThread.Start();
+            Process process = Process.GetCurrentProcess();
+
+            Thread h1 = new Thread(async () =>
+            {
+                while (true)
+                {
+                    MonitorRecursosSerividor_Linux();
+                }
+            });
+            h1.Start();
         }
-
-
-
-
-        
     }
     #region Windows
    
@@ -211,44 +213,33 @@ class Program
 
     static async void MonitorRecursosSerividor_Linux()
     {
-        Process process = Process.GetCurrentProcess();
 
         try
         {
-            Thread h1 = new Thread(async () =>
+            float CPUusado = usoCPULinux();
+            Console.WriteLine("uso CPU : " + CPUusado + "%");
+
+            float RAMusada = usoRAMlinux();
+            Console.WriteLine("uso RAM : " + RAMusada + "%");
+
+            float DISCOusado = usoDISCOlinux();
+            Console.WriteLine("uso Disk : " + DISCOusado + "%");
+
+            MonitoreoServidor MS = new MonitoreoServidor()
             {
-                while (true)
-                {
-                    float CPUusado = usoCPULinux();
-                    Console.WriteLine("uso CPU : " + CPUusado + "%");
+                IdMonitoreo = 0,
+                IdServer = "S_L_1",
+                UsoCpu = Convert.ToInt32(CPUusado),
+                UsoMemoria = (int)RAMusada,
+                UsoEspacio = (int)DISCOusado,
+                EstadoServer = 1,
+                FechaMonitoreo = DateTime.Now,
+                TimeOut = 3,
+                estadoParam = "normal"
+            };
 
-                    float RAMusada = usoRAMlinux();
-                    Console.WriteLine("uso RAM : " + RAMusada + "%");
-
-                    float DISCOusado = usoDISCOlinux();
-                    Console.WriteLine("uso Disk : " + DISCOusado + "%");
-
-                    MonitoreoServidor MS = new MonitoreoServidor()
-                    {
-                        IdMonitoreo = 0,
-                        IdServer = "S_L_1",
-                        UsoCpu = Convert.ToInt32(CPUusado),
-                        UsoMemoria = (int)RAMusada,
-                        UsoEspacio = (int)DISCOusado,
-                        EstadoServer = 1,
-                        FechaMonitoreo = DateTime.Now,
-                        TimeOut = 3,
-                        estadoParam = "normal"
-                    };
-
-                    await crearRegistroServidor(MS);
-                    Console.WriteLine($"Registrado Server");
-                    Thread.Sleep(180000);
-                }
-
-            });
-
-            h1.Start();
+            await crearRegistroServidor(MS);
+            Console.WriteLine($"Registrado Server");
         }
         catch (Exception ex)
         {
