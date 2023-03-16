@@ -82,6 +82,7 @@ class Program
                     {
                         MonitorRecursosSerividorWin();
                         MonitorServicio_Socket();
+                        MonitorServicioWin2_appWeb();
                         Thread.Sleep(10000);
                     }
                 });
@@ -108,7 +109,8 @@ class Program
             }
             else if (codServidor.Equals("S_L_2"))
             {
-                Console.Write("Parte donde va el tomcat");
+                MonitorRecursosSerividor_Linux();
+
             }
             
         }
@@ -150,7 +152,7 @@ class Program
             MonitoreoServidor MS = new MonitoreoServidor()
             {
                 IdMonitoreo = 0,
-                IdServer = "S_W_1",
+                IdServer = "codServidor",
                 UsoCpu = Convert.ToInt32(monitorCPU * 100),
                 UsoMemoria = (int)monitorRAM / 1024,
                 UsoEspacio = (int)espacioC,
@@ -297,7 +299,15 @@ class Program
             };
 
             ms = await crearRegistroServicio(ms);
-            Console.WriteLine($"Servicio Socket Registrado");
+            if (EjecutarClientesocket())
+            {
+                Console.WriteLine($"Servicio Socket Activo");
+            }
+            else
+            {
+                Console.WriteLine($"Servicio Socket Inactivo");
+
+            }
         }
         catch (Exception ex)
         {
@@ -305,7 +315,7 @@ class Program
             Console.WriteLine("Error en Monitoreo Servicios....: Socket ");
         }
     }
-    static private bool systemWimdos()
+    static private bool systemWimdos() //determina el sistema operativo
     {
          bool esWimdows = false;
 
@@ -342,6 +352,68 @@ class Program
            return esWimdows;
         }
     }
+    static async void MonitorServicioWin2_appWeb()
+    {
+        try
+        {
+            MonitoreoServicio ms = new MonitoreoServicio()
+            {
+                IdMonitoreo = 0,
+                IdServicio = "SVC4",
+                EstadoServicio = 0,
+                FechaMoniServicio = DateTime.Now,
+                TimeOutServicio = 3,
+                estadoParam = "alert"
+
+            };
+
+            if (AppWebCorriendo("http://localhost:5090/"))
+            {
+                ms.EstadoServicio = 1;
+                ms.estadoParam = "normal";
+                Console.WriteLine($"Servicio app Web Registrado Activo");
+
+            }
+            else
+            {
+                Console.WriteLine($"Servicio app Web Registrado Inactivo");
+
+            };
+
+            ms = await crearRegistroServicio(ms);
+            Console.WriteLine($"Servicio app Web Registrado");
+        }
+        catch (Exception ex)
+        {
+            registroBitacora(ex.Message);
+            Console.WriteLine("Error en Monitoreo Servicios....: Base datos 2 ");
+        }
+    }
+    static bool AppWebCorriendo(string url)
+    {
+        try
+        {
+            var request = (HttpWebRequest)WebRequest.Create(url);
+            request.Method = "GET";
+
+            var response = (HttpWebResponse)request.GetResponse();
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            registroBitacora(ex.Message);
+            Console.WriteLine("Error: " + ex.Message);
+            return false;
+        }
+    }
+
 
     #endregion
 
@@ -364,7 +436,7 @@ class Program
             MonitoreoServidor MS = new MonitoreoServidor()
             {
                 IdMonitoreo = 0,
-                IdServer = "S_L_1",
+                IdServer = codServidor,
                 UsoCpu = Convert.ToInt32(CPUusado),
                 UsoMemoria = (int)RAMusada,
                 UsoEspacio = (int)DISCOusado,
