@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Net.Sockets;
 using System.Net;
+using Newtonsoft.Json;
 
 class Program
 {
@@ -162,7 +163,7 @@ class Program
                 estadoParam = "normal"
             };
             MS = await crearRegistroServidor(MS);
-            Console.WriteLine($"Registrado Server");
+            Console.WriteLine($"Registrado Server \n");
         }
         catch (Exception ex )
         {
@@ -249,7 +250,6 @@ class Program
         catch (Exception ex)
         {
             registroBitacora(ex.Message);
-            Console.WriteLine("Error conexion con Northwind ");
             return false;
         }finally { conexion.Close(); }
     }
@@ -272,7 +272,6 @@ class Program
         catch (Exception ex)
         {
             registroBitacora(ex.Message);
-            Console.WriteLine("Error conexion con Tarea4_AK7 ");
             return false;
         }
         finally { conexion.Close(); }
@@ -564,17 +563,105 @@ class Program
     static async Task<MonitoreoServidor> crearRegistroServidor(MonitoreoServidor c)
     {
         HttpResponseMessage response = await client.PostAsJsonAsync("Monitoreo", c);
-        response.EnsureSuccessStatusCode();
+        try
+        {
+            if (response.StatusCode == System.Net.HttpStatusCode.Created)
+            {
+                var task2 = Task<string>.Run(async () =>
+                {
+                    return await response.Content.ReadAsStringAsync();
+                    //return await response.Content.ReadAsAsync<MonitoreoServidor>();
+                });
+                string resultStr = task2.Result;
+                MonitoreoServidor result = JsonConvert.DeserializeObject<MonitoreoServidor>(resultStr);
+                Console.WriteLine("Monitoreo  {0} creado para el Servidor {1}", result.IdMonitoreo, result.IdServer);
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                Console.WriteLine("Error 400: No se le envían los parámetros de manera correcta.");
+                return await response.Content.ReadAsAsync<MonitoreoServidor>();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                Console.WriteLine("Error 404: Recurso no existe.");
+                return await response.Content.ReadAsAsync<MonitoreoServidor>();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                Console.WriteLine("Error 409: Recurso ya existe.");
+                return await response.Content.ReadAsAsync<MonitoreoServidor>();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+            {
+                Console.WriteLine("Error 500: Error no controlado.");
+                registroBitacora("Error 500: Error no controlado.");
 
-        return await response.Content.ReadAsAsync<MonitoreoServidor>();
+                return await response.Content.ReadAsAsync<MonitoreoServidor>();
+            }
+
+            return await response.Content.ReadAsAsync<MonitoreoServidor>();
+        }
+        catch (Exception ex)
+        {
+            registroBitacora(ex.Message);
+            Console.WriteLine("Error al agregar Monitoreo Servicios....");
+            return await response.Content.ReadAsAsync<MonitoreoServidor>();
+        }
     }
     static async Task<MonitoreoServicio> crearRegistroServicio(MonitoreoServicio c)
     {
         HttpResponseMessage response = await client.PostAsJsonAsync("monitoreoServicio", c);
-        response.EnsureSuccessStatusCode();
 
-        return await response.Content.ReadAsAsync<MonitoreoServicio>();
+        try
+        {
+            if (response.StatusCode == System.Net.HttpStatusCode.Created)
+            {
+                var task2 = Task<string>.Run(async () =>
+                {
+                    return await response.Content.ReadAsStringAsync();
+                    //return await response.Content.ReadAsAsync<MonitoreoServidor>();
+                });
+                string resultStr = task2.Result;
+                MonitoreoServidor result = JsonConvert.DeserializeObject<MonitoreoServidor>(resultStr);
+                Console.WriteLine("Monitoreo  {0} creado para el Servicio {1}", result.IdMonitoreo, result.IdServer);
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+            {
+                Console.WriteLine("Error 400: No se le envían los parámetros de manera correcta.");
+                return await response.Content.ReadAsAsync<MonitoreoServicio>();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                Console.WriteLine("Error 404: Recurso no existe.");
+                return await response.Content.ReadAsAsync<MonitoreoServicio>();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                Console.WriteLine("Error 409: Recurso ya existe.");
+                return await response.Content.ReadAsAsync<MonitoreoServicio>();
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.InternalServerError)
+            {
+                Console.WriteLine("Error 500: Error no controlado.");
+                registroBitacora("Error 500: Error no controlado.");
+
+                return await response.Content.ReadAsAsync<MonitoreoServicio>();
+            }
+
+            return await response.Content.ReadAsAsync<MonitoreoServicio>();
+        }
+        catch (Exception ex)
+        {
+            registroBitacora(ex.Message);
+            Console.WriteLine("Error al agregar Monitoreo Servicios....");
+            return await response.Content.ReadAsAsync<MonitoreoServicio>();
+        }
     }
+
+    //response.EnsureSuccessStatusCode();
+
+    //return await response.Content.ReadAsAsync<MonitoreoServicio>();
+
     static void registroBitacora(string ErrorGuardar)
     {
         try
