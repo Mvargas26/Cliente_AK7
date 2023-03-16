@@ -28,7 +28,8 @@ class Program
                 while (true)
                 {
                     MonitorRecursosSerividorWin();
-                    MonitorServicioWin();
+                    MonitorServicioWin_BD1();
+                    MonitorServicioWin_BD2();
                     Thread.Sleep(180000);
                 }
             });
@@ -103,7 +104,7 @@ class Program
            Console.WriteLine("Error monitoreo Recursos W");
         }
     }
-    static async void MonitorServicioWin()
+    static async void MonitorServicioWin_BD1()
     {
         try
         {
@@ -125,16 +126,45 @@ class Program
             };
 
             ms = await crearRegistroServicio(ms);
-            Console.WriteLine($"Servicio Registrado");
+            Console.WriteLine($"Servicio 1 Registrado");
         }
         catch (Exception ex  )
         {
             registroBitacora(ex.Message);
-            Console.WriteLine("Error en Monitoreo Servicios....: ");
+            Console.WriteLine("Error en Monitoreo Servicios....: Base de datos 1");
         }
     }
+    static async void MonitorServicioWin_BD2()
+    {
+        try
+        {
+            MonitoreoServicio ms = new MonitoreoServicio()
+            {
+                IdMonitoreo = 0,
+                IdServicio = "SVC2",
+                EstadoServicio = 0,
+                FechaMoniServicio = DateTime.Now,
+                TimeOutServicio = 3,
+                estadoParam = "alert"
 
-   static private bool conexionBDNortwhind()
+            };
+
+            if (conexionBDTarea4AK7())
+            {
+                ms.EstadoServicio = 1;
+                ms.estadoParam = "normal";
+            };
+
+            ms = await crearRegistroServicio(ms);
+            Console.WriteLine($"Servicio 2 Registrado");
+        }
+        catch (Exception ex)
+        {
+            registroBitacora(ex.Message);
+            Console.WriteLine("Error en Monitoreo Servicios....: Base datos 2 ");
+        }
+    }
+    static private bool conexionBDNortwhind()
     {
         SqlConnection conexion = new SqlConnection("server=MVARGASPC\\INSTA12019 ; database=Northwind ; integrated security = true");
         bool conecta = false;
@@ -156,6 +186,30 @@ class Program
             Console.WriteLine("Error conexion con Northwind ");
             return false;
         }finally { conexion.Close(); }
+    }
+    static private bool conexionBDTarea4AK7()
+    {
+        SqlConnection conexion = new SqlConnection("server=MVARGASPC\\INSTA12019 ; database=Tarea4_AK7 ; integrated security = true");
+        bool conecta = false;
+
+        try
+        {
+            conexion.Open();
+            if (conexion.State > 0)
+            {
+                conecta = true;
+            }
+            conexion.Close();
+
+            return conecta;
+        }
+        catch (Exception ex)
+        {
+            registroBitacora(ex.Message);
+            Console.WriteLine("Error conexion con Tarea4_AK7 ");
+            return false;
+        }
+        finally { conexion.Close(); }
     }
 
     static private bool systemWimdos()
