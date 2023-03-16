@@ -29,6 +29,7 @@ class Program
                 {
                     MonitorRecursosSerividorWin();
                     MonitorServicioWin();
+                    registroBitacora("Prueba Wimdows");
                     Thread.Sleep(180000);
                 }
             });
@@ -45,7 +46,9 @@ class Program
                 while (true)
                 {
                     MonitorRecursosSerividor_Linux();
-                     Thread.Sleep(180000);
+                    registroBitacora("Prueba Wimdows");
+
+                    Thread.Sleep(180000);
                 }
             });
             h1.Start();
@@ -97,9 +100,9 @@ class Program
             MS = await crearRegistroServidor(MS);
             Console.WriteLine($"Registrado Server");
         }
-        catch (Exception )
+        catch (Exception ex )
         {
-
+            registroBitacora(ex.Message);
            Console.WriteLine("Error monitoreo Recursos W");
         }
     }
@@ -127,9 +130,10 @@ class Program
             ms = await crearRegistroServicio(ms);
             Console.WriteLine($"Servicio Registrado");
         }
-        catch (Exception )
+        catch (Exception ex  )
         {
-          Console.WriteLine("Error en Monitoreo Servicios....: ");
+            registroBitacora(ex.Message);
+            Console.WriteLine("Error en Monitoreo Servicios....: ");
         }
     }
 
@@ -149,8 +153,9 @@ class Program
 
             return conecta;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            registroBitacora(ex.Message);
             Console.WriteLine("Error conexion con Northwind ");
             return false;
         }finally { conexion.Close(); }
@@ -188,6 +193,7 @@ class Program
         }
         catch (Exception ex)
         {
+            registroBitacora(ex.Message);
             Console.WriteLine("Error al comprobar sistema....");
            return esWimdows;
         }
@@ -229,7 +235,7 @@ class Program
         }
         catch (Exception ex)
         {
-
+            registroBitacora(ex.Message);
             Console.WriteLine("Error monitoreo Recursos L");
         }
 
@@ -237,6 +243,7 @@ class Program
 
     static float usoCPULinux()
     {
+
         ProcessStartInfo psi = new ProcessStartInfo("bash", "-c \"top -b -n1 | grep 'Cpu(s)'\"");
         psi.RedirectStandardOutput = true;
         Process proc = Process.Start(psi);
@@ -298,5 +305,38 @@ class Program
         return await response.Content.ReadAsAsync<MonitoreoServicio>();
     }
 
+    static void registroBitacora(string ErrorGuardar)
+    {
+        try
+        {
+            string urlEscritorio = "";
+
+            if (systemWimdos())
+            {
+                 urlEscritorio = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            }
+            else
+            {
+                 urlEscritorio = Environment.GetEnvironmentVariable("XDG_DESKTOP_DIR");
+            }
+
+            string archivo = Path.Combine(urlEscritorio, "BitacoraInterna_Cliente_PrograV.txt");
+
+            if (File.Exists(archivo))
+            {
+                File.AppendAllText(archivo, $"{DateTime.Now}--Error: " + ErrorGuardar + "\n");
+            }
+            else
+            {
+                File.WriteAllText(archivo, $"{DateTime.Now}--Error: " + ErrorGuardar + "\n");
+            }
+        }
+        catch (Exception)
+        {
+
+           Console.WriteLine("Error en la bitacora");
+        }
+       
+    }
     #endregion
 }//fn class
