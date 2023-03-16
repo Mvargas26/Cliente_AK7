@@ -21,21 +21,31 @@ class Program
 
         if (systemWimdos())
         {
-            Console.WriteLine("Esta en Sistema Wimdows");
-            MonitorRecursosSerividorWin();
-            MonitorServicioWin();
-
-            Console.ReadKey();
-        }  else
-        {
-            Process process = Process.GetCurrentProcess();
-
             Thread h1 = new Thread(async () =>
             {
+                Console.WriteLine("Esta en Sistema Windows");
+
+                while (true)
+                {
+                    MonitorRecursosSerividorWin();
+                    MonitorServicioWin();
+                    Thread.Sleep(180000);
+                }
+            });
+            h1.Start();
+
+            Console.ReadKey();
+        } 
+        else
+        {
+            Thread h1 = new Thread(async () =>
+            {
+                Console.WriteLine("Esta en Sistema Linux");
+
                 while (true)
                 {
                     MonitorRecursosSerividor_Linux();
-                     Thread.Sleep(10000);
+                     Thread.Sleep(180000);
                 }
             });
             h1.Start();
@@ -49,56 +59,45 @@ class Program
 
         try
         {
-            Thread h1 = new Thread(async () =>
+            int espacioC = 0;
+
+            float monitorCPU = process.TotalProcessorTime.Ticks / (float)Stopwatch.Frequency / Environment.ProcessorCount;
+            Console.WriteLine("CPU en uso: " + monitorCPU * 100);
+
+            long monitorRAM = process.WorkingSet64;
+            Console.WriteLine("RAM en uso: {0:N0} MB", monitorRAM / 1024);
+
+            DriveInfo[] discos = DriveInfo.GetDrives();
+            foreach (DriveInfo disco in discos)
             {
-                while (true)
+                if (disco.IsReady)
                 {
-                    int espacioC = 0;
+                    long esapcioTotal = disco.TotalSize;
+                    long espacioLibre = disco.TotalFreeSpace;
+                    long espacioUsado = esapcioTotal - espacioLibre;
+                    Console.WriteLine("{0} usado: {1:N0} bytes ({2:F2}%)", disco.Name, espacioUsado, (espacioUsado / (float)esapcioTotal) * 100);
+                    espacioC = Convert.ToInt32(espacioUsado / 1024 / 1024 / 1024);
 
-                    float monitorCPU = process.TotalProcessorTime.Ticks / (float)Stopwatch.Frequency / Environment.ProcessorCount;
-                    Console.WriteLine("CPU en uso: " + monitorCPU * 100);
-
-                    long monitorRAM = process.WorkingSet64;
-                    Console.WriteLine("RAM en uso: {0:N0} MB", monitorRAM / 1024);
-
-                    DriveInfo[] discos = DriveInfo.GetDrives();
-                    foreach (DriveInfo disco in discos)
-                    {
-                        if (disco.IsReady)
-                        {
-                            long esapcioTotal = disco.TotalSize;
-                            long espacioLibre = disco.TotalFreeSpace;
-                            long espacioUsado = esapcioTotal - espacioLibre;
-                            Console.WriteLine("{0} usado: {1:N0} bytes ({2:F2}%)", disco.Name, espacioUsado, (espacioUsado / (float)esapcioTotal) * 100);
-                            espacioC = Convert.ToInt32(espacioUsado / 1024 / 1024 / 1024);
-
-                        }
-                    }
-                    var currentTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"); ;
-
-                    MonitoreoServidor MS = new MonitoreoServidor()
-                    {
-                        IdMonitoreo = 0,
-                        IdServer = "S_W_1",
-                        UsoCpu = Convert.ToInt32(monitorCPU * 100),
-                        UsoMemoria = (int)monitorRAM / 1024,
-                        UsoEspacio = (int)espacioC,
-                        EstadoServer = 1,
-                        FechaMonitoreo = DateTime.Parse(currentTime),
-                        TimeOut = 3,
-                        estadoParam = "normal"
-                    };
-                    MS = await crearRegistroServidor(MS);
-                    Console.WriteLine($"Registrado Server");
-
-                    //hilo duerme 3 min
-                    Thread.Sleep(180000);
                 }
-            });
+            }
+            var currentTime = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"); ;
 
-            h1.Start();
+            MonitoreoServidor MS = new MonitoreoServidor()
+            {
+                IdMonitoreo = 0,
+                IdServer = "S_W_1",
+                UsoCpu = Convert.ToInt32(monitorCPU * 100),
+                UsoMemoria = (int)monitorRAM / 1024,
+                UsoEspacio = (int)espacioC,
+                EstadoServer = 1,
+                FechaMonitoreo = DateTime.Parse(currentTime),
+                TimeOut = 3,
+                estadoParam = "normal"
+            };
+            MS = await crearRegistroServidor(MS);
+            Console.WriteLine($"Registrado Server");
         }
-        catch (Exception ex)
+        catch (Exception )
         {
 
            Console.WriteLine("Error monitoreo Recursos W");
@@ -106,43 +105,29 @@ class Program
     }
     static async void MonitorServicioWin()
     {
-        Process process = Process.GetCurrentProcess();
-
         try
         {
-            Thread h2 = new Thread(async () =>
+            MonitoreoServicio ms = new MonitoreoServicio()
             {
-                while (true)
-                {
+                IdMonitoreo = 0,
+                IdServicio = "SVC1",
+                EstadoServicio = 0,
+                FechaMoniServicio = DateTime.Now,
+                TimeOutServicio = 3,
+                estadoParam = "alert"
 
-                    MonitoreoServicio ms = new MonitoreoServicio()
-                    {
-                        IdMonitoreo = 0,
-                        IdServicio = "SVC1",
-                        EstadoServicio = 0,
-                        FechaMoniServicio = DateTime.Now,
-                        TimeOutServicio = 3,
-                        estadoParam = "alert"
+            };
 
-                    };
+            if (conexionBDNortwhind())
+            {
+                ms.EstadoServicio = 1;
+                ms.estadoParam = "normal";
+            };
 
-                    if (conexionBDNortwhind())
-                    {
-                        ms.EstadoServicio = 1;
-                        ms.estadoParam = "normal";
-                    };
-
-                    ms = await crearRegistroServicio(ms);
-                    Console.WriteLine($"Servicio Registrado");
-
-                    //hilo duerme 3 min
-                    Thread.Sleep(180000);
-                }
-            });
-
-            h2.Start();
+            ms = await crearRegistroServicio(ms);
+            Console.WriteLine($"Servicio Registrado");
         }
-        catch (Exception ex)
+        catch (Exception )
         {
           Console.WriteLine("Error en Monitoreo Servicios....: ");
         }
@@ -164,7 +149,7 @@ class Program
 
             return conecta;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             Console.WriteLine("Error conexion con Northwind ");
             return false;
@@ -312,24 +297,6 @@ class Program
 
         return await response.Content.ReadAsAsync<MonitoreoServicio>();
     }
-    static async Task crearRegistroServidorLinux(MonitoreoServidor c)
-    {
-        using (var httpClient = new HttpClient())
-        {
-            var requestUrl = "http://apiprogra.somee.com/Monitoreo";
 
-            var requestParams = c;
-
-            var requestJson = Newtonsoft.Json.JsonConvert.SerializeObject(requestParams);
-
-            var requestMessage = new HttpRequestMessage(HttpMethod.Post, requestUrl);
-            requestMessage.Content = new StringContent(requestJson, Encoding.UTF8, "application/json");
-
-            var response = await httpClient.SendAsync(requestMessage);
-
-            var responseJson = await response.Content.ReadAsStringAsync();
-            Console.WriteLine(responseJson);
-        }
-    }
     #endregion
 }//fn class
