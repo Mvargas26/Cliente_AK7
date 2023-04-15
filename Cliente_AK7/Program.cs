@@ -21,7 +21,8 @@ class Program
     private static string codServidor="SERV1";
     static void Main()
     {
-        client.BaseAddress = new Uri("http://apiprogra.somee.com/");
+        //client.BaseAddress = new Uri("http://apiprogra.somee.com/");
+        client.BaseAddress = new Uri("http://localhost:5021/");
         client.DefaultRequestHeaders.Accept.Clear();
         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
@@ -153,7 +154,7 @@ class Program
             MonitoreoServidor MS = new MonitoreoServidor()
             {
                 IdMonitoreo = 0,
-                IdServer = "codServidor",
+                IdServer = codServidor,
                 UsoCpu = Convert.ToInt32(monitorCPU * 100),
                 UsoMemoria = (int)monitorRAM / 1024,
                 UsoEspacio = (int)espacioC,
@@ -575,7 +576,7 @@ class Program
                 });
                 string resultStr = task2.Result;
                 MonitoreoServidor result = JsonConvert.DeserializeObject<MonitoreoServidor>(resultStr);
-                Console.WriteLine("Monitoreo  {0} creado para el Servidor {1}", result.IdMonitoreo, result.IdServer);
+                Console.WriteLine("Monitoreo  creado para el Servidor");
             }
             else if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
             {
